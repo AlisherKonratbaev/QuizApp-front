@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -10,8 +10,10 @@ import IconButton from "@mui/material/IconButton";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useFetchSubjectQuery } from "../../store/subjectApi";
+import { useGetQuestionsCountQuery } from "../../store/questionApi";
 import RemoveDialog from "./RemoveDialog";
 import EditDialog from "./EditDialog";
+import SubjectCount from "./SubjectCount";
 
 export default function SubjectsList() {
   const { data: subjects = [], isLoading } = useFetchSubjectQuery();
@@ -51,7 +53,9 @@ export default function SubjectsList() {
                     <TableRow key={subject._id}>
                       <TableCell>{index + 1}</TableCell>
                       <TableCell>{subject.name}</TableCell>
-                      <TableCell>1</TableCell>
+                      <TableCell>
+                        <SubjectCount subject_id={subject._id} />
+                      </TableCell>
                       <TableCell>
                         <IconButton
                           aria-label="edit"

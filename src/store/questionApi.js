@@ -19,6 +19,13 @@ export const questionApi = createApi({
       }),
       providesTags: (result) => ["questions"],
     }),
+    getQuestionsCount: build.query({
+      query: (subject_id) => ({
+        url: `questions/count/${subject_id}`,
+        method: "GET",
+      }),
+      providesTags: (result) => ["questions"],
+    }),
     addQuestion: build.mutation({
       query: (obj) => ({
         url: "questions",
@@ -61,6 +68,7 @@ export const questionApi = createApi({
 export const {
   useFetchQuestionQuery,
   useGetOneQuestionQuery,
+  useGetQuestionsCountQuery,
   useAddQuestionMutation,
   useDeleteQuestionMutation,
   useUpdateQuestionMutation,

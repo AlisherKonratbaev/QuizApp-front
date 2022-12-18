@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -16,12 +16,17 @@ import AccordionDetails from "@mui/material/AccordionDetails";
 import Typography from "@mui/material/Typography";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
+import RemoveDialog from "./RemoveDialog";
+import EditDialog from "./EditDialog";
 import { useFetchQuestionQuery } from "../../store/questionApi";
 import { useFetchSubjectQuery } from "../../store/subjectApi";
 
 export default function QuestionsList() {
   const { data: questions = [], isLoading } = useFetchQuestionQuery();
   const { data: subjects = [] } = useFetchSubjectQuery();
+  const [open, setOpen] = useState(false);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState({});
 
   const getSubject = (id) => {
     if (subjects.length !== 0) {
@@ -52,6 +57,7 @@ export default function QuestionsList() {
       </div>
     );
   };
+
   const getAnswer = (answer) => {
     switch (answer) {
       case "A":
@@ -66,6 +72,16 @@ export default function QuestionsList() {
         return 0;
     }
   };
+
+  const handleOpen = (question) => {
+    setCurrentQuestion(question);
+    setOpen(true);
+  };
+
+  const handleEdit = (question) => {
+     setCurrentQuestion(question);
+     setOpenEdit(true);
+  };
   return (
     <>
       {isLoading ? (
@@ -78,6 +94,7 @@ export default function QuestionsList() {
                 <TableCell>#</TableCell>
                 <TableCell sx={{ width: "60%" }}>Вопросы</TableCell>
                 <TableCell>Навание предмета</TableCell>
+                <TableCell>Класс</TableCell>
                 <TableCell>Действие</TableCell>
               </TableRow>
             </TableHead>
@@ -102,6 +119,7 @@ export default function QuestionsList() {
                         </Accordion>
                       </TableCell>
                       <TableCell>{getSubject(el.subject)}</TableCell>
+                      <TableCell>{el.class}</TableCell>
                       <TableCell>
                         <IconButton
                           aria-label="edit"
@@ -109,7 +127,7 @@ export default function QuestionsList() {
                           sx={{ mr: "10px" }}
                           color="primary"
                           onClick={() => {
-                            // handleEdit(el);
+                            handleEdit(el);
                           }}
                         >
                           <EditIcon fontSize="inherit" />
@@ -119,7 +137,7 @@ export default function QuestionsList() {
                           size="small"
                           color="secondary"
                           onClick={() => {
-                            // handleOpen(el);
+                            handleOpen(el);
                           }}
                         >
                           <DeleteIcon fontSize="inherit" />
@@ -132,6 +150,13 @@ export default function QuestionsList() {
           </Table>
         </TableContainer>
       )}
+      <RemoveDialog question={currentQuestion} open={open} setOpen={setOpen} />
+      <EditDialog
+        question={currentQuestion}
+        open={openEdit}
+        setOpen={setOpenEdit}
+        subjects={subjects}
+      />
     </>
   );
 }

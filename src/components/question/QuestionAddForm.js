@@ -44,6 +44,7 @@ export default function QuestionAddForm() {
     e.preventDefault();
     const newQuestion = {
       ...values,
+      class:values.selectClass,
       variants: [
         values.variant1,
         values.variant2,
