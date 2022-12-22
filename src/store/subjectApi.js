@@ -52,7 +52,7 @@ export const subjectApi = createApi({
 
 export const {
   useFetchSubjectQuery,
-  useGetOneSubject,
+  useGetOneSubjectQuery,
   useAddSubjectMutation,
   useDeleteSubjectMutation,
   useUpdateSubjectMutation

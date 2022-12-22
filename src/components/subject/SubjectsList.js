@@ -16,7 +16,7 @@ import EditDialog from "./EditDialog";
 import SubjectCount from "./SubjectCount";
 
 export default function SubjectsList() {
-  const { data: subjects = [], isLoading } = useFetchSubjectQuery();
+  const { data: subjects = [], isLoading, isError } = useFetchSubjectQuery();
   const [open, setOpen] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [currentSubject, setCurrentSubject] = useState({});
