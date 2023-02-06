@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 
 import Typography from "@mui/material/Typography";
@@ -13,45 +13,52 @@ import Select from "@mui/material/Select";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import FormLabel from "@mui/material/FormLabel";
 import Button from "@mui/material/Button";
 import CustomAlert from "../CustomAlert";
 import { useFetchSubjectQuery } from "../../store/subjectApi";
 import { useAddQuestionMutation } from "../../store/questionApi";
+import { useForm, Controller } from "react-hook-form";
 
 const schoolClass = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+
 export default function QuestionAddForm() {
+  const { data: subjects = [], isLoading } = useFetchSubjectQuery();
   const [alert, setAlert] = useState({
     open: false,
     type: "error",
     message: "",
   });
-  const initialState = {
-    question: "",
-    subject: "",
-    variant1: "",
-    variant2: "",
-    variant3: "",
-    variant4: "",
-    selectClass: 1,
-    answer: "",
-  };
-  const [values, setValues] = useState({ ...initialState });
-  const { data: subjects = [], isLoading } = useFetchSubjectQuery();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    control,
+    setValue,
+  } = useForm({ mode: "all" });
   const [addQuestion, {}] = useAddQuestionMutation();
 
-  const handleAdd = async (e) => {
-    e.preventDefault();
+  const handleAdd = async (data) => {
+    const {
+      question,
+      subject,
+      variant1,
+      variant2,
+      variant3,
+      variant4,
+      selectClass,
+      answer,
+    } = data;
     const newQuestion = {
-      ...values,
-      class:values.selectClass,
-      variants: [
-        values.variant1,
-        values.variant2,
-        values.variant3,
-        values.variant4,
-      ],
+      question,
+      subject,
+      class: selectClass,
+      answer,
+      variants: [variant1, variant2, variant3, variant4],
     };
+    console.log(newQuestion);
     const added = await addQuestion(newQuestion);
     if (added.error) {
       setAlert({
@@ -65,11 +72,17 @@ export default function QuestionAddForm() {
         type: "success",
         message: "Вопрос успешно добавлен",
       });
-      setValues({ ...initialState });
+      reset();
+      reset("subject");
+      setValue("subject", "");
     }
   };
   return (
-    <Box component="form" className="question" onSubmit={handleAdd}>
+    <Box
+      component="form"
+      className="question"
+      onSubmit={handleSubmit(handleAdd)}
+    >
       <Typography component="p" variant="h4">
         Форма добавление вопроса
       </Typography>
@@ -80,125 +93,144 @@ export default function QuestionAddForm() {
             multiline
             rows={4}
             fullWidth
-            value={values.question}
-            onChange={(e) =>
-              setValues((val) => ({ ...val, question: e.target.value }))
-            }
+            {...register("question", {
+              required: { value: true, message: "Обязательно к заполнению" },
+              minLength: { value: 3, message: "Минимум 3 символа" },
+            })}
+            error={Boolean(errors?.question)}
+            helperText={errors.question?.message}
           />
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Box sx={{ width: "250px", pt: "30px" }}>
-              <FormControl fullWidth>
-                <InputLabel id="subject-select">Предметы</InputLabel>
-                <Select
-                  labelId="subject-select"
-                  id="subject-select"
-                  value={values.subject}
-                  label="Предметы"
-                  onChange={(e) =>
-                    setValues((val) => ({ ...val, subject: e.target.value }))
-                  }
-                >
-                  {subjects.length &&
-                    subjects.map((subject) => {
-                      return (
-                        <MenuItem key={subject._id} value={subject._id}>
-                          {subject.name}
-                        </MenuItem>
-                      );
-                    })}
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                fullWidth
+                label="Предметы"
+                defaultValue=""
+                inputProps={register("subject", {
+                  required: "Выберите предмет",
+                })}
+                error={!!errors.subject}
+                helperText={errors.subject?.message}
+              >
+                {subjects.length === 0 ? (
+                  <MenuItem>1</MenuItem>
+                ) : (
+                  subjects?.map((subject) => {
+                    return (
+                      <MenuItem key={subject._id} value={subject._id}>
+                        {subject.name}
+                      </MenuItem>
+                    );
+                  })
+                )}
+                {/* {subjects.length} */}
+              </TextField>
             </Box>
 
             <Box sx={{ width: "200px", pt: "30px" }}>
-              <FormControl fullWidth>
-                <InputLabel id="class-select">Класс</InputLabel>
-                <Select
-                  labelId="class-select"
-                  id="class-select"
-                  value={values.selectClass}
-                  label="Класс"
-                  onChange={(e) =>
-                    setValues((val) => ({
-                      ...val,
-                      selectClass: e.target.value,
-                    }))
-                  }
-                >
-                  {schoolClass.map((c) => {
-                    return (
-                      <MenuItem key={c} value={c}>
-                        {c}
-                      </MenuItem>
-                    );
-                  })}
-                </Select>
-              </FormControl>
+              <TextField
+                select
+                fullWidth
+                label="Класс"
+                defaultValue=""
+                inputProps={register("selectClass", {
+                  required: "Выберите класс",
+                })}
+                error={!!errors.selectClass}
+                helperText={errors.selectClass?.message}
+              >
+                {schoolClass.map((c) => {
+                  return (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  );
+                })}
+              </TextField>
             </Box>
           </Box>
         </Box>
         <Box className="question-form__second">
           <FormControl fullWidth>
-            <RadioGroup
-              aria-labelledby="variantes"
-              value={values.answer}
-              onChange={(e) =>
-                setValues((val) => ({ ...val, answer: e.target.value }))
-              }
-            >
-              <div className="variant__item">
-                <FormControlLabel value="A" control={<Radio />} label="A" />
-                <TextField
-                  fullWidth
-                  id=""
-                  label=""
-                  variant="outlined"
-                  value={values.variant1}
-                  onChange={(e) =>
-                    setValues((val) => ({ ...val, variant1: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="variant__item">
-                <FormControlLabel value="B" control={<Radio />} label="B" />
-                <TextField
-                  fullWidth
-                  id=""
-                  label=""
-                  variant="outlined"
-                  value={values.variant2}
-                  onChange={(e) =>
-                    setValues((val) => ({ ...val, variant2: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="variant__item">
-                <FormControlLabel value="C" control={<Radio />} label="C" />
-                <TextField
-                  fullWidth
-                  id=""
-                  label=""
-                  variant="outlined"
-                  value={values.variant3}
-                  onChange={(e) =>
-                    setValues((val) => ({ ...val, variant3: e.target.value }))
-                  }
-                />
-              </div>
-              <div className="variant__item">
-                <FormControlLabel value="D" control={<Radio />} label="D" />
-                <TextField
-                  fullWidth
-                  id=""
-                  label=""
-                  variant="outlined"
-                  value={values.variant4}
-                  onChange={(e) =>
-                    setValues((val) => ({ ...val, variant4: e.target.value }))
-                  }
-                />
-              </div>
-            </RadioGroup>
+            <Controller
+              rules={{ required: { value: true, message: "Ответ не выбран" } }}
+              defaultValue={null}
+              control={control}
+              name="answer"
+              render={({ field }) => (
+                <RadioGroup {...field}>
+                  <div className="variant__item">
+                    <FormControlLabel value="A" control={<Radio />} label="A" />
+                    <TextField
+                      fullWidth
+                      id="variantA"
+                      variant="outlined"
+                      {...register("variant1", {
+                        required: {
+                          value: true,
+                          message: "Обязательно к заполнению",
+                        },
+                      })}
+                      error={!!errors.variant1}
+                      helperText={errors.variant1?.message}
+                    />
+                  </div>
+                  <div className="variant__item">
+                    <FormControlLabel value="B" control={<Radio />} label="B" />
+                    <TextField
+                      fullWidth
+                      id="variantB"
+                      variant="outlined"
+                      {...register("variant2", {
+                        required: {
+                          value: true,
+                          message: "Обязательно к заполнению",
+                        },
+                      })}
+                      error={!!errors.variant2}
+                      helperText={errors.variant2?.message}
+                    />
+                  </div>
+                  <div className="variant__item">
+                    <FormControlLabel value="C" control={<Radio />} label="C" />
+                    <TextField
+                      fullWidth
+                      id="variantC"
+                      variant="outlined"
+                      {...register("variant3", {
+                        required: {
+                          value: true,
+                          message: "Обязательно к заполнению",
+                        },
+                      })}
+                      error={!!errors.variant3}
+                      helperText={errors.variant3?.message}
+                    />
+                  </div>
+                  <div className="variant__item">
+                    <FormControlLabel value="D" control={<Radio />} label="D" />
+                    <TextField
+                      fullWidth
+                      id="variantD"
+                      variant="outlined"
+                      {...register("variant4", {
+                        required: {
+                          value: true,
+                          message: "Обязательно к заполнению",
+                        },
+                      })}
+                      error={!!errors.variant4}
+                      helperText={errors.variant4?.message}
+                    />
+                  </div>
+                </RadioGroup>
+              )}
+            />
+
+            <FormHelperText sx={{ color: "rgb(185, 61, 61)" }}>
+              {errors.answer ? errors.answer?.message || "error!" : false}
+            </FormHelperText>
           </FormControl>
         </Box>
       </Box>

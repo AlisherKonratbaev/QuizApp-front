@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -10,50 +10,56 @@ import { useTheme } from "@mui/material/styles";
 import CustomAlert from "../CustomAlert";
 import TextField from "@mui/material/TextField";
 import { useUpdateSubjectMutation } from "../../store/subjectApi";
+import { useForm } from "react-hook-form";
 
-export default function EditDialog({ subject, open, setOpen }) {
+const EditDialog = ({ subject, open, setOpen }) => {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("md"));
   const [updateSubject, {}] = useUpdateSubjectMutation();
-  const [text, setText] = useState("");
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+    setValue,
+    setError,
+  } = useForm();
   const [alert, setAlert] = useState({
     open: false,
     type: "error",
     message: "",
   });
+
   useEffect(() => {
-    setText(`${subject.name}`);
-  }, [subject]);
+    setValue("name", subject.name);
+  }, [subject.name]);
 
   const closeDialogHandle = () => {
     setOpen(false);
   };
-  const saveHandler = async () => {
-    if(text.trim() === subject.name) {
+  const saveHandler = async (data) => {
+    const { name } = data;
+    if (name === subject.name) {
       closeDialogHandle();
-      return
+      return;
     }
     const temp = {
       _id: subject._id,
-      name: text.trim(),
+      name: name.trim().toLowerCase(),
     };
     const updated = await updateSubject(temp);
     if (updated.error) {
-      setAlert({
-        open: true,
-        type: "error",
-        message: "Ошибка название предмета (должен быть не меньше 3 симбола и бить уникальным)",
-      });
+      setError("name", { type: "custom", message: "Ошибка при измения" });
     } else {
-      closeDialogHandle();
       setAlert({
         open: true,
         type: "success",
         message: "Предмет был изменен",
       });
+      closeDialogHandle();
+      reset();
     }
   };
-
   return (
     <div>
       <Dialog
@@ -63,25 +69,35 @@ export default function EditDialog({ subject, open, setOpen }) {
         aria-labelledby="responsive-dialog-title"
       >
         <DialogTitle id="responsive-dialog-title">{`Редактировать название`}</DialogTitle>
-        <DialogContent>
-          <TextField
-            id="standard-basic"
-            label="Название предмета"
-            variant="standard"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={closeDialogHandle}>
-            Отмена
-          </Button>
-          <Button onClick={saveHandler} autoFocus>
-            Сохранить
-          </Button>
-        </DialogActions>
+        <form onSubmit={handleSubmit(saveHandler)}>
+          <DialogContent>
+            <TextField
+              id="standard-basic"
+              label="Название предмета"
+              variant="standard"
+              {...register("name", {
+                required: { value: true, message: "Обязательно к заполнению" },
+                minLength: { value: 3, message: "Минимум 3 символа" },
+              })}
+              error={errors.name ? true : false}
+              helperText={
+                errors.name ? errors.name?.message || "error!" : false
+              }
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus onClick={closeDialogHandle}>
+              Отмена
+            </Button>
+            <Button type="submit" autoFocus>
+              Сохранить
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
       <CustomAlert alert={alert} setAlert={setAlert} />
     </div>
   );
-}
+};
+
+export default EditDialog;

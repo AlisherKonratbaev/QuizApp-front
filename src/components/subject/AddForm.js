@@ -4,32 +4,23 @@ import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import CustomAlert from "../CustomAlert";
-
+import { useForm } from "react-hook-form";
 import { useAddSubjectMutation } from "../../store/subjectApi";
 
-
-
 export default function AddForm() {
-  const [text, setText] = useState("");
+  const { register, handleSubmit,setError, reset, formState: { errors }} = useForm({mode:"all"});
   const [alert, setAlert] = useState({
     open: false,
     type: "error",
     message: "",
   });
 
-  const [addSubject, {}] = useAddSubjectMutation();
+  const [addSubject] = useAddSubjectMutation();
 
-  const submitHandler = async (e) => {
-    e.preventDefault();
-    if (text.trim().length < 3) {
-      setAlert({
-        open: true,
-        type: "error",
-        message: "Ошибка! Название предмета должен быть не менее 3 символов",
-      });
-      return;
-    }
-    const result = await addSubject(text.trim());
+  const saveSubjet = async (data) => {
+    const { name } = data;
+    console.log(name);
+    const result = await addSubject(name.trim().toLowerCase());
     if (result.error) {
       setAlert({
         open: true,
@@ -42,13 +33,14 @@ export default function AddForm() {
         type: "success",
         message: "Предмет успешно добавлен",
       });
-      setText("");
+      reset();
     }
   };
 
   return (
     <Box
-      onSubmit={submitHandler}
+      component="form"
+      onSubmit={handleSubmit(saveSubjet)}
       sx={{
         width: 500,
         height: 200,
@@ -58,21 +50,22 @@ export default function AddForm() {
         backgroundColor: "rgb(248,249,250)",
         mb: "50px",
       }}
-      component="form"
     >
       <Typography variant="h4" component="p" sx={{ mb: "30px" }}>
         Добавить предмет
       </Typography>
       <TextField
+        error={errors.name ? true : false}
         fullWidth
-        id="outlined-basic"
+        id="name"
         label="Название предмета"
         variant="outlined"
         sx={{ mb: "20px" }}
-        value={text}
-        onChange={(e) => {
-          setText(e.target.value);
-        }}
+        {...register("name", {
+          required: { value: true, message: "Обязательно к заполнению" },
+          minLength: { value: 3, message: "Минимум 3 символа" },
+        })}
+        helperText={errors.name ? errors.name?.message || "error!" : false}
       />
       <Button variant="outlined" size="large" type="submit">
         Добавить
